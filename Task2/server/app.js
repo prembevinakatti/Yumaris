@@ -1,1 +1,26 @@
-const express = require("express")
+const express = require("express");
+require("dotenv").config();
+const connectDB = require("./config/database");
+const cors = require("cors");
+const cookieParser = require("cookie-parser");
+const userAuth = require("./routes/userAuth.routes");
+
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+const corsOptions = {
+  origin: "http://localhost:5173",
+  credentials: true,
+};
+app.use(cors(corsOptions));
+
+app.use("/api/user/auth", userAuth);
+
+const PORT = process.env.PORT || 8080;
+
+app.listen(PORT, () => {
+  connectDB();
+  console.log(`Server running on PORT ${PORT}`);
+});
