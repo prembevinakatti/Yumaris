@@ -15,17 +15,34 @@ const isAuthenticated = (req, res, next) => {
       ? authHeader.split(" ")[1]
       : null;
 
-    const token = cookieToken || bearerToken;
+    const tokensToTry = [bearerToken, cookieToken].filter(Boolean);
 
-    if (!token) {
+    if (tokensToTry.length === 0) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized: No token provided",
       });
     }
 
-    const decoded = jwt.verify(token, process.env.USER_JWT_TOKEN);
-    req.userId = decoded.userId;
+    let decodedToken = null;
+
+    for (const token of tokensToTry) {
+      try {
+        decodedToken = jwt.verify(token, process.env.USER_JWT_TOKEN);
+        break;
+      } catch (error) {
+        // Try next available token source.
+      }
+    }
+
+    if (!decodedToken) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized: Invalid or expired token",
+      });
+    }
+
+    req.userId = decodedToken.userId;
 
     return next();
   } catch (error) {
